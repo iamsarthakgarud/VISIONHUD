@@ -1,0 +1,175 @@
+/* VisionHUD Tactical Styling - Conforming to DESIGN.md */
+@import url('https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --hud-surface: #060e1d;
+  --hud-surface-dim: #040810;
+  --hud-primary: #00F0FF;     /* Ion Cyan */
+  --hud-secondary: #FFB700;   /* Tactical Amber */
+  --hud-tertiary: #00FF66;    /* Bio Green */
+  --hud-alert: #FF0033;       /* Breach Red */
+  --hud-accent: #0066FF;      /* Vector Blue */
+  --hud-border: #162644;
+  --hud-text-vivid: #d6e8ff;
+  --hud-text-muted: #5c7499;
+}
+
+/* Hard chamfered cuts */
+.chamfer-sm {
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.chamfer-md {
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.chamfer-cut-tr {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.chamfer-cut-bl {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+
+/* Cyber CRT Scanlines */
+.scanlines-overlay {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+}
+
+/* Tactical spatial wireframe grid */
+.tactical-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* HUD Decoupled Corner Brackets */
+.hud-bracket {
+  position: relative;
+}
+.hud-bracket::before,
+.hud-bracket::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--hud-primary);
+  pointer-events: none;
+  z-index: 20;
+}
+.hud-bracket::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+.hud-bracket::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+}
+
+/* Alert corner brackets */
+.hud-bracket-alert::before,
+.hud-bracket-alert::after {
+  border-color: var(--hud-alert);
+}
+.hud-bracket-amber::before,
+.hud-bracket-amber::after {
+  border-color: var(--hud-secondary);
+}
+.hud-bracket-green::before,
+.hud-bracket-green::after {
+  border-color: var(--hud-tertiary);
+}
+
+/* Glow emissions */
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.35), inset 0 0 10px rgba(0, 240, 255, 0.1);
+}
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 0, 51, 0.45), inset 0 0 12px rgba(255, 0, 51, 0.2);
+}
+.glow-amber {
+  box-shadow: 0 0 15px rgba(255, 183, 0, 0.35), inset 0 0 10px rgba(255, 183, 0, 0.1);
+}
+.glow-green {
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.35), inset 0 0 10px rgba(0, 255, 102, 0.1);
+}
+
+/* Threat level pulsating borders */
+@keyframes critical-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 0, 51, 0.3), inset 0 0 10px rgba(255, 0, 51, 0.1);
+    border-color: rgba(255, 0, 51, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(255, 0, 51, 0.8), inset 0 0 25px rgba(255, 0, 51, 0.3);
+    border-color: rgba(255, 0, 51, 1);
+  }
+}
+.threat-pulse-critical {
+  animation: critical-pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes high-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 102, 0, 0.25);
+    border-color: rgba(255, 102, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255, 102, 0, 0.6);
+    border-color: rgba(255, 102, 0, 0.9);
+  }
+}
+.threat-pulse-high {
+  animation: high-pulse 1.6s infinite ease-in-out;
+}
+
+/* Tactical Exit Arrow Pulse & Sweep */
+@keyframes exit-sweep {
+  0% { transform: translateX(-8px); opacity: 0.5; }
+  50% { transform: translateX(8px); opacity: 1; filter: drop-shadow(0 0 12px #00FF66); }
+  100% { transform: translateX(-8px); opacity: 0.5; }
+}
+.exit-arrow-animate {
+  animation: exit-sweep 1.2s infinite ease-in-out;
+}
+
+/* Rotating reticle spin */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-reticle {
+  animation: spin-slow 12s linear infinite;
+}
+
+/* Glassmorphic Tactical Panels */
+.hud-panel {
+  background: rgba(6, 14, 29, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--hud-border);
+}
+
+/* Thermal IR Filter CSS LUT approximation */
+.thermal-active-filter {
+  filter: contrast(170%) brightness(110%) hue-rotate(180deg) invert(1) saturate(220%);
+}
+
+/* Waveform bars for voice alert */
+@keyframes wave-bounce {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+.audio-bar-1 { animation: wave-bounce 0.8s infinite 0.1s; }
+.audio-bar-2 { animation: wave-bounce 0.6s infinite 0.3s; }
+.audio-bar-3 { animation: wave-bounce 0.9s infinite 0.2s; }
+.audio-bar-4 { animation: wave-bounce 0.7s infinite 0.4s; }

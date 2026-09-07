@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionHUD // Physical Hazard Test Cards (Judge Handout)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body { background: white !important; color: black !important; }
+      .no-print { display: none !important; }
+      .hazard-card { break-inside: avoid; border: 4px solid #000 !important; color: #000 !important; }
+    }
+    .hud-cut { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+  </style>
+</head>
+<body class="bg-[#040810] text-[#d6e8ff] font-['Space_Grotesk'] p-6 sm:p-10 min-h-screen">
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#162644] pb-6 mb-8 gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#060e1d] border border-[#00F0FF]/40 text-[#00F0FF] text-xs font-['Space_Mono'] font-bold uppercase rounded mb-2">
+          <span>HACKATHON PHYSICAL TEST CARDS</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold uppercase text-white tracking-wider">VisionHUD Target Recognition Cards</h1>
+        <p class="text-sm text-[#5c7499] mt-1 font-['Space_Mono']">Hold these cards in front of the VisionHUD camera or display on smartphone</p>
+      </div>
+      <div class="flex items-center gap-3 no-print">
+        <button onclick="window.print()" class="px-5 py-2.5 bg-[#00F0FF] text-[#040810] font-['Space_Mono'] font-bold text-xs uppercase tracking-wider rounded shadow-[0_0_15px_rgba(0,240,255,0.4)] hover:bg-white transition-all">
+          Print Target Cards
+        </button>
+        <a href="index.html" class="px-5 py-2.5 bg-[#060e1d] border border-[#00F0FF]/60 text-[#00F0FF] font-['Space_Mono'] font-bold text-xs uppercase tracking-wider rounded hover:bg-[#00F0FF]/10 transition-all">
+          Open HUD Visor
+        </a>
+      </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <!-- Card 1: Casualty -->
+      <div class="hazard-card bg-[#060e1d] border-4 border-[#FFB700] p-8 rounded-xl relative hud-cut shadow-[0_0_25px_rgba(255,183,0,0.2)] flex flex-col justify-between aspect-[4/3]">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 bg-[#FFB700] text-[#040810] font-['Space_Mono'] font-bold text-xs uppercase tracking-wider">TARGET CLASS 01</span>
+          <span class="font-['Space_Mono'] text-xs text-[#FFB700] font-bold">URGENT PRIORITY</span>
+        </div>
+        <div class="text-center py-6">
+          <div class="text-7xl mb-4">🛏️ 🧍</div>
+          <h2 class="text-3xl font-bold text-white uppercase tracking-wider">POSSIBLE CASUALTY</h2>
+          <p class="text-xs font-['Space_Mono'] text-[#FFB700] mt-2">PERSON LYING DOWN // SEARCH & RESCUE TARGET</p>
+        </div>
+        <div class="border-t border-[#FFB700]/30 pt-4 flex items-center justify-between text-xs font-['Space_Mono'] text-[#5c7499]">
+          <span>PRIOR: 1.5m</span>
+          <span>IFF: UNRESPONSIVE CIVILIAN</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Active Flame -->
+      <div class="hazard-card bg-[#060e1d] border-4 border-[#FF0033] p-8 rounded-xl relative hud-cut shadow-[0_0_25px_rgba(255,0,51,0.25)] flex flex-col justify-between aspect-[4/3]">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 bg-[#FF0033] text-white font-['Space_Mono'] font-bold text-xs uppercase tracking-wider">TARGET CLASS 02</span>
+          <span class="font-['Space_Mono'] text-xs text-[#FF0033] font-bold">CRITICAL HAZARD</span>
+        </div>
+        <div class="text-center py-6">
+          <div class="text-7xl mb-4">🔥 🔥</div>
+          <h2 class="text-3xl font-bold text-white uppercase tracking-wider">ACTIVE FLAME / FIRE</h2>
+          <p class="text-xs font-['Space_Mono'] text-[#FF0033] mt-2">THERMAL EXPANSION PLUME // CLASS A/B FIRE</p>
+        </div>
+        <div class="border-t border-[#FF0033]/30 pt-4 flex items-center justify-between text-xs font-['Space_Mono'] text-[#5c7499]">
+          <span>PRIOR: 1.2m</span>
+          <span>THERMAL SIGNATURE: > 450°C</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Gas Tank -->
+      <div class="hazard-card bg-[#060e1d] border-4 border-[#FF00FF] p-8 rounded-xl relative hud-cut shadow-[0_0_25px_rgba(255,0,255,0.2)] flex flex-col justify-between aspect-[4/3]">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 bg-[#FF00FF] text-[#040810] font-['Space_Mono'] font-bold text-xs uppercase tracking-wider">TARGET CLASS 04</span>
+          <span class="font-['Space_Mono'] text-xs text-[#FF00FF] font-bold">EXPLOSIVE THREAT</span>
+        </div>
+        <div class="text-center py-6">
+          <div class="text-7xl mb-4">⛽ 🛢️</div>
+          <h2 class="text-3xl font-bold text-white uppercase tracking-wider">GAS CYLINDER / TANK</h2>
+          <p class="text-xs font-['Space_Mono'] text-[#FF00FF] mt-2">PRESSURIZED LPG/ACETYLENE CANISTER</p>
+        </div>
+        <div class="border-t border-[#FF00FF]/30 pt-4 flex items-center justify-between text-xs font-['Space_Mono'] text-[#5c7499]">
+          <span>PRIOR: 0.8m</span>
+          <span>BLEVE EXPLOSION RISK ZONE</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Emergency Exit -->
+      <div class="hazard-card bg-[#060e1d] border-4 border-[#00FF66] p-8 rounded-xl relative hud-cut shadow-[0_0_25px_rgba(0,255,102,0.25)] flex flex-col justify-between aspect-[4/3]">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 bg-[#00FF66] text-[#040810] font-['Space_Mono'] font-bold text-xs uppercase tracking-wider">TARGET CLASS 06</span>
+          <span class="font-['Space_Mono'] text-xs text-[#00FF66] font-bold">SAFE NAVIGATION</span>
+        </div>
+        <div class="text-center py-6">
+          <div class="text-7xl mb-4">🚪 🟢</div>
+          <h2 class="text-3xl font-bold text-white uppercase tracking-wider">EMERGENCY EXIT</h2>
+          <p class="text-xs font-['Space_Mono'] text-[#00FF66] mt-2">TACTICAL EGRESS WAYPOINT ROUTE</p>
+        </div>
+        <div class="border-t border-[#00FF66]/30 pt-4 flex items-center justify-between text-xs font-['Space_Mono'] text-[#5c7499]">
+          <span>PRIOR: 0.3m</span>
+          <span>EVACUATION AZIMUTH LOCK</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Presentation Tips -->
+    <div class="mt-12 p-6 bg-[#060e1d] border border-[#162644] rounded-xl font-['Space_Mono'] text-xs text-[#5c7499]">
+      <span class="text-[#00F0FF] font-bold block mb-2">// HACKATHON LIVE DEMO PROTOCOL //</span>
+      <p class="mb-2">1. Show the <strong>Casualty Card</strong> to trigger instantaneous victim detection reticle and voice callout.</p>
+      <p class="mb-2">2. Place the <strong>Active Flame Card</strong> and <strong>Gas Cylinder Card</strong> together to trigger the compound risk escalation engine (Threat score surges to 92% CRITICAL with evacuation alarm).</p>
+      <p>3. Hold up the <strong>Emergency Exit Card</strong> while in Thermal Mode to trigger the glowing neon-green evacuation guidance vector.</p>
+    </div>
+  </div>
+</body>
+</html>

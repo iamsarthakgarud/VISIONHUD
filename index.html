@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionHUD // AI Tactical Assistant for Frontline Rescue Teams</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "hud-bg": "#040810",
+            "hud-surface": "#060e1d",
+            "hud-panel": "rgba(6, 14, 29, 0.85)",
+            "hud-primary": "#00F0FF",
+            "hud-secondary": "#FFB700",
+            "hud-tertiary": "#00FF66",
+            "hud-alert": "#FF0033",
+            "hud-border": "#162644",
+            "hud-text": "#d6e8ff",
+            "hud-muted": "#5c7499"
+          },
+          fontFamily: {
+            "display": ["Space Grotesk", "sans-serif"],
+            "body": ["Chivo", "sans-serif"],
+            "mono": ["Space Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom Tactical HUD Styles -->
+  <link rel="stylesheet" href="css/hud.css">
+</head>
+<body class="bg-hud-bg text-hud-text font-body antialiased overflow-x-hidden selection:bg-hud-primary selection:text-black">
+
+  <!-- NAVIGATION & TELEMETRY HEADER -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-[#040810]/95 backdrop-blur-md border-b border-hud-border h-16 flex items-center justify-between px-4 sm:px-8">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded bg-hud-surface border border-hud-primary flex items-center justify-center glow-cyan">
+          <span class="material-symbols-outlined text-hud-primary text-[20px]">visibility</span>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-display font-bold text-lg tracking-wider text-white">Vision<span class="text-hud-primary">HUD</span></span>
+            <span class="px-1.5 py-0.2 bg-hud-primary/20 text-hud-primary text-[10px] font-mono font-bold rounded border border-hud-primary/40">v2.4 TAC</span>
+          </div>
+          <span class="text-[9px] font-mono text-hud-muted uppercase tracking-widest">TACTICAL RESCUE CO-PILOT</span>
+        </div>
+      </div>
+
+      <!-- Threat Level Global Badge -->
+      <div id="topThreatBadge" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded bg-hud-surface border border-hud-tertiary glow-green transition-all duration-300">
+        <span class="w-2.5 h-2.5 rounded-full bg-hud-tertiary animate-pulse" id="topThreatDot"></span>
+        <span class="text-xs font-mono font-bold text-white tracking-wider" id="topThreatText">THREAT: NOMINAL [08%]</span>
+      </div>
+    </div>
+
+    <!-- Presentation Script Status Banner -->
+    <div class="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded bg-hud-surface border border-hud-border font-mono text-xs">
+      <span class="text-hud-muted">// PROTOCOL:</span>
+      <span class="text-hud-primary font-bold" id="currentStageText">STAGE 1: NOMINAL (NORMAL ROOM)</span>
+      <span class="text-[10px] text-hud-muted ml-2">[HOTKEYS: 1-4 | SPACE: AUTO-RUN]</span>
+    </div>
+
+    <!-- Top Action Actuators -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button id="viewToggleBtn" class="px-3 py-1.5 rounded bg-hud-surface border border-hud-primary/50 text-hud-primary font-mono text-xs font-bold uppercase tracking-wider hover:bg-hud-primary hover:text-black transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px]">view_quilt</span>
+        <span id="viewToggleLabel">Architecture</span>
+      </button>
+
+      <a href="hazard_cards.html" target="_blank" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded bg-hud-surface border border-hud-secondary/60 text-hud-secondary font-mono text-xs font-bold uppercase tracking-wider hover:bg-hud-secondary hover:text-black transition-all">
+        <span class="material-symbols-outlined text-[16px]">style</span>
+        <span>Target Cards</span>
+      </a>
+
+      <button id="audioMuteBtn" class="p-2 rounded bg-hud-surface border border-hud-border text-hud-muted hover:text-hud-primary transition-all" title="Mute/Unmute Audio Alerts">
+        <span class="material-symbols-outlined text-[20px]" id="audioMuteIcon">volume_up</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN OPERATIONAL VIEWPORT -->
+  <main class="pt-16 min-h-screen flex flex-col">
+
+    <!-- ============================================== -->
+    <!-- SECTION A: FULL IMMERSIVE TACTICAL VISOR HUD   -->
+    <!-- ============================================== -->
+    <section id="visorSection" class="relative flex-1 w-full bg-black flex flex-col justify-between overflow-hidden select-none">
+      
+      <!-- Top Tactical Telemetry Line inside Visor -->
+      <div class="relative z-30 w-full px-4 sm:px-8 py-2.5 bg-gradient-to-b from-black/90 via-black/50 to-transparent flex flex-wrap items-center justify-between font-mono text-[11px] text-hud-muted border-b border-hud-border/40">
+        <div class="flex items-center gap-4 sm:gap-6">
+          <span class="flex items-center gap-1.5 text-hud-primary font-bold">
+            <span class="w-2 h-2 rounded-full bg-hud-primary animate-ping"></span>
+            AR-OVERLAY // 60 FPS
+          </span>
+          <span>LAT: <strong class="text-white font-mono">37.7749° N</strong></span>
+          <span>LON: <strong class="text-white font-mono">122.4194° W</strong></span>
+          <span>ELEV: <strong class="text-hud-secondary font-mono">+42m</strong></span>
+        </div>
+
+        <div class="flex items-center gap-4 sm:gap-6">
+          <span>AI ENGINE: <strong class="text-hud-primary" id="backendModeBadge">LOCAL ONNX EDGE</strong></span>
+          <span>WEBSOCKET: <strong class="text-hud-tertiary" id="wsStatusBadge">READY</strong></span>
+          <span>BATT: <strong class="text-hud-tertiary">96%</strong></span>
+          <span class="text-white font-bold" id="clockDisplay">12:00:00</span>
+        </div>
+      </div>
+
+      <!-- Center Dynamic Viewport Frame (Video + Canvas + HUD Overlays) -->
+      <div class="relative flex-1 w-full min-h-[580px] lg:min-h-[680px] flex items-center justify-center overflow-hidden bg-[#040810]" id="visorContainer">
+        
+        <!-- Video Layer (Webcam or High-Def Thermal/Tactical Disaster Feed) -->
+        <video id="webcamFeed" class="absolute inset-0 w-full h-full object-cover z-0 filter brightness-95 contrast-110" autoplay playsinline muted></video>
+        
+        <!-- Fallback Video / Camera Poster for immediate zero-click playback -->
+        <img id="fallbackFeed" src="assets/demo_tactical_bg.jpg" class="absolute inset-0 w-full h-full object-cover z-0 filter brightness-90 contrast-125" alt="Disaster zone camera feed">
+
+        <!-- Cyber CRT Scanlines Layer -->
+        <div class="absolute inset-0 scanlines-overlay z-10"></div>
+        
+        <!-- CRT Vignette & Atmospheric Gradients -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/60 pointer-events-none z-10"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)] pointer-events-none z-10"></div>
+
+        <!-- Hardware-Accelerated 60 FPS Canvas HUD Overlay -->
+        <canvas id="hudCanvas" class="absolute inset-0 w-full h-full z-20 pointer-events-none"></canvas>
+
+        <!-- ============================================== -->
+        <!-- HUD SIDE PANELS (OVERLAID OVER VIDEO)          -->
+        <!-- ============================================== -->
+
+        <!-- LEFT PANEL: Detected Object Stack & Compass Vectors -->
+        <div class="absolute top-14 left-4 sm:left-6 z-25 w-72 sm:w-80 hud-panel p-3.5 chamfer-sm border border-hud-border/80 shadow-2xl pointer-events-auto">
+          <div class="flex items-center justify-between border-b border-hud-border pb-2 mb-2">
+            <span class="text-[11px] font-mono font-bold text-hud-primary tracking-wider uppercase flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[14px]">radar</span>
+              TARGET STACK // OBJECTS
+            </span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-hud-primary/10 text-hud-primary font-bold" id="targetCountBadge">0 LOCKED</span>
+          </div>
+
+          <!-- Dynamic List of Detected Objects -->
+          <div id="targetListContainer" class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <!-- Compound Hazard Alert Card (if triggered) -->
+          <div id="compoundHazardContainer" class="mt-3 pt-2 border-t border-hud-border hidden">
+            <div class="p-2.5 rounded bg-hud-alert/15 border border-hud-alert/60 glow-red">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-bold text-hud-alert flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">crisis_alert</span>
+                  COMPOUND ESCALATION
+                </span>
+                <span class="text-[9px] font-mono px-1 bg-hud-alert text-white font-bold rounded">LEVEL 4</span>
+              </div>
+              <p class="text-xs font-mono text-white font-bold mt-1" id="compoundHazardTitle">CRITICAL EXPLOSION RISK</p>
+              <p class="text-[10px] text-hud-muted mt-0.5" id="compoundHazardDesc">Gas cylinder in immediate proximity to fire plume!</p>
+              <div class="mt-1.5 text-[9px] font-mono text-hud-alert font-bold uppercase tracking-wider bg-black/40 px-2 py-0.5 rounded">
+                ACTION: EVACUATE ZONE
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL: Environmental Diagnostics & FLIR LWIR PiP -->
+        <div class="absolute top-14 right-4 sm:right-6 z-25 w-64 sm:w-72 hud-panel p-3.5 chamfer-sm border border-hud-border/80 shadow-2xl pointer-events-auto hidden sm:block">
+          <div class="flex items-center justify-between border-b border-hud-border pb-2 mb-2">
+            <span class="text-[11px] font-mono font-bold text-hud-secondary tracking-wider uppercase flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[14px]">sensors</span>
+              FIELD TELEMETRY
+            </span>
+            <span class="text-[9px] font-mono text-hud-tertiary font-bold">ALL SENSORS NOMINAL</span>
+          </div>
+
+          <div class="space-y-2 font-mono text-xs">
+            <div class="flex justify-between items-center bg-black/40 px-2 py-1 rounded">
+              <span class="text-hud-muted text-[10px]">AMBIENT TEMP:</span>
+              <span class="text-white font-bold font-mono" id="ambientTempText">34.2°C</span>
+            </div>
+            <div class="flex justify-between items-center bg-black/40 px-2 py-1 rounded">
+              <span class="text-hud-muted text-[10px]">MAX THERMAL PEAK:</span>
+              <span class="text-hud-alert font-bold font-mono" id="peakThermalText">482°C</span>
+            </div>
+            <div class="flex justify-between items-center bg-black/40 px-2 py-1 rounded">
+              <span class="text-hud-muted text-[10px]">CO TOXIC GAS:</span>
+              <span class="text-hud-secondary font-bold font-mono">185 PPM [CAUTION]</span>
+            </div>
+            <div class="flex justify-between items-center bg-black/40 px-2 py-1 rounded">
+              <span class="text-hud-muted text-[10px]">STRUCTURAL INTEGRITY:</span>
+              <span class="text-hud-primary font-bold font-mono">82% SAFE</span>
+            </div>
+          </div>
+
+          <!-- FLIR Thermal PiP Feed -->
+          <div class="mt-3 pt-2 border-t border-hud-border">
+            <div class="flex items-center justify-between text-[9px] font-mono text-hud-primary mb-1">
+              <span>LWIR 8-14μm SENSOR PiP</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-hud-tertiary animate-ping"></span>
+            </div>
+            <div class="relative w-full h-24 rounded border border-hud-primary/40 overflow-hidden group cursor-pointer" id="pipThermalFeed" title="Click to swap thermal view">
+              <img src="assets/hero_thermal.jpg" class="w-full h-full object-cover filter contrast-125" alt="Thermal Sensor Feed">
+              <div class="absolute inset-0 bg-hud-primary/10 group-hover:bg-transparent transition-all"></div>
+              <div class="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/80 font-mono text-[8px] text-white rounded">FLIR TAU2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM CENTER: Prioritized Audio Voice Log & Alert Banner -->
+        <div class="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[700px] z-25 hud-panel p-3 rounded-lg border border-hud-primary/40 shadow-2xl pointer-events-auto">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <!-- Animated Audio Waveform -->
+              <div class="flex items-center gap-0.5 h-6 px-1.5 py-1 bg-hud-primary/10 border border-hud-primary/30 rounded">
+                <div class="w-1 bg-hud-primary rounded-full audio-bar-1"></div>
+                <div class="w-1 bg-hud-primary rounded-full audio-bar-2"></div>
+                <div class="w-1 bg-hud-primary rounded-full audio-bar-3"></div>
+                <div class="w-1 bg-hud-primary rounded-full audio-bar-4"></div>
+              </div>
+              <div>
+                <span class="text-[9px] font-mono text-hud-primary font-bold block uppercase tracking-wider">
+                  TACTICAL SYNTHETIC VOICE // JARVIS AUDIO
+                </span>
+                <p class="text-xs sm:text-sm font-mono text-white font-semibold italic" id="voiceBannerText">
+                  "System online. Scanning for hazards and casualties."
+                </p>
+              </div>
+            </div>
+
+            <!-- Voice Control Button -->
+            <button id="micToggleBtn" class="px-3 py-1.5 rounded bg-hud-surface border border-hud-border text-xs font-mono text-hud-muted hover:text-hud-primary hover:border-hud-primary transition-all flex items-center gap-1 shrink-0">
+              <span class="material-symbols-outlined text-[16px]" id="micIcon">mic</span>
+              <span id="micLabel">Voice: ON</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM CONTROL CONSOLE & JUDGE PRESETS (THE PITCH RUNNER) -->
+      <div class="w-full bg-[#040810] border-t border-hud-border px-4 sm:px-8 py-3 z-30 flex flex-wrap items-center justify-between gap-4">
+        
+        <!-- Live Camera & Thermal Filter Actuators -->
+        <div class="flex items-center gap-2">
+          <button id="toggleWebcamBtn" class="px-3.5 py-1.5 rounded bg-hud-surface border border-hud-primary/50 text-hud-primary font-mono text-xs font-bold uppercase tracking-wider hover:bg-hud-primary hover:text-black transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">videocam</span>
+            <span id="webcamBtnText">Use Real Webcam</span>
+          </button>
+
+          <button id="toggleThermalBtn" class="px-3.5 py-1.5 rounded bg-hud-surface border border-hud-secondary/50 text-hud-secondary font-mono text-xs font-bold uppercase tracking-wider hover:bg-hud-secondary hover:text-black transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">wb_iridescent</span>
+            <span id="thermalBtnText">Thermal Mode (IR)</span>
+          </button>
+        </div>
+
+        <!-- Judge Presentation Hotkey Presets (from Blueprint Script) -->
+        <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <span class="text-hud-muted text-[10px] tracking-widest uppercase mr-1 hidden md:inline">JUDGE PRESETS:</span>
+          
+          <button id="presetNominalBtn" class="px-3 py-1 rounded bg-hud-surface border border-hud-tertiary text-hud-tertiary font-bold hover:bg-hud-tertiary hover:text-black transition-all" title="Hotkey: 1 or N">
+            [1] Nominal Room
+          </button>
+          
+          <button id="presetCasualtyBtn" class="px-3 py-1 rounded bg-hud-surface border border-hud-secondary text-hud-secondary font-bold hover:bg-hud-secondary hover:text-black transition-all" title="Hotkey: 2 or C">
+            [2] Casualty Lock
+          </button>
+          
+          <button id="presetCompoundBtn" class="px-3 py-1 rounded bg-hud-surface border border-hud-alert text-hud-alert font-bold hover:bg-hud-alert hover:text-white transition-all glow-red" title="Hotkey: 3 or F">
+            [3] Fire + Gas Threat
+          </button>
+          
+          <button id="presetThermalExitBtn" class="px-3 py-1 rounded bg-hud-surface border border-hud-primary text-hud-primary font-bold hover:bg-hud-primary hover:text-black transition-all" title="Hotkey: 4 or E">
+            [4] Thermal & Evac Route
+          </button>
+
+          <button id="autoScriptBtn" class="px-3 py-1 rounded bg-hud-primary text-black font-bold uppercase tracking-wider hover:bg-white transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] flex items-center gap-1" title="Hotkey: Spacebar">
+            <span class="material-symbols-outlined text-[16px]">play_circle</span>
+            <span>2-Min Auto Script</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- SECTION B: EXECUTIVE BRIEFING & ARCHITECTURE   -->
+    <!-- ============================================== -->
+    <section id="briefingSection" class="hidden w-full py-16 px-4 sm:px-10 bg-[#040810] border-t border-hud-border">
+      <div class="max-w-6xl mx-auto space-y-16">
+
+        <!-- Executive Summary -->
+        <div class="text-center max-w-3xl mx-auto">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-hud-surface border border-hud-primary/40 text-hud-primary font-mono text-xs font-bold uppercase mb-4">
+            <span class="w-2 h-2 rounded-full bg-hud-tertiary animate-pulse"></span>
+            HACKATHON MASTER BLUEPRINT // PRODUCTION SPEC v1.0
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-display font-bold uppercase text-white tracking-tight leading-tight">
+            AI Tactical Assistant for <span class="text-hud-primary glow-cyan">Frontline Rescue Teams</span>
+          </h2>
+          <p class="mt-4 text-base sm:text-lg text-hud-muted leading-relaxed">
+            Rescuers operating in zero-visibility, heavy smoke, and collapsed zones suffer from sensory overload and occupied hands. 
+            VisionHUD acts as an AI "third eye", projecting real-time directional vectors and audio cues without requiring manual touch input.
+          </p>
+        </div>
+
+        <!-- 4 Core Capabilities Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-alert/40 hover:border-hud-alert transition-all">
+            <div class="text-3xl mb-3">🔥</div>
+            <h3 class="text-lg font-bold text-white uppercase font-display mb-1">Hazard Detection</h3>
+            <p class="text-xs text-hud-muted leading-relaxed">
+              Real-time classification of active flames, smoke density, gas cylinders, and hazardous chemical containers.
+            </p>
+          </div>
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-secondary/40 hover:border-hud-secondary transition-all">
+            <div class="text-3xl mb-3">🧍</div>
+            <h3 class="text-lg font-bold text-white uppercase font-display mb-1">Casualty Tracking</h3>
+            <p class="text-xs text-hud-muted leading-relaxed">
+              Monocular distance calculation and clock azimuth targeting to locate trapped or downed persons through obscurity.
+            </p>
+          </div>
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-primary/40 hover:border-hud-primary transition-all">
+            <div class="text-3xl mb-3">🧭</div>
+            <h3 class="text-lg font-bold text-white uppercase font-display mb-1">Spatial Threat Matrix</h3>
+            <p class="text-xs text-hud-muted leading-relaxed">
+              Compounds individual hazards into survival decisions (e.g. Fire + Gas Cylinder proximity = Critical BLEVE explosion alert).
+            </p>
+          </div>
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-tertiary/40 hover:border-hud-tertiary transition-all">
+            <div class="text-3xl mb-3">🔊</div>
+            <h3 class="text-lg font-bold text-white uppercase font-display mb-1">Two-Way Voice HUD</h3>
+            <p class="text-xs text-hud-muted leading-relaxed">
+              100% hands-free Web Speech grammar: ask for status, toggle thermal filters, and find exit corridors in zero visibility.
+            </p>
+          </div>
+        </div>
+
+        <!-- Technical Formulas & Math Spec -->
+        <div class="p-8 rounded-2xl bg-hud-surface border border-hud-border">
+          <h3 class="text-xl font-bold font-display uppercase text-white mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-hud-primary">functions</span>
+            Core Mathematical Specifications (Zero-CPU Heuristics)
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 font-mono text-xs">
+            <div class="p-5 rounded-lg bg-[#040810] border border-hud-border">
+              <span class="text-hud-primary font-bold uppercase block mb-2">// 1. MONOCULAR DISTANCE ESTIMATION //</span>
+              <div class="p-3 bg-hud-surface rounded border border-hud-primary/30 text-white text-sm mb-3">
+                D = (H_real × f_y) / h_pixels
+              </div>
+              <p class="text-hud-muted leading-relaxed">
+                Eliminates MiDaS neural network latency by leveraging known physical priors (Person: 1.7m, Cylinder: 0.8m, Exit: 0.3m) against bounding box pixel heights.
+              </p>
+            </div>
+
+            <div class="p-5 rounded-lg bg-[#040810] border border-hud-border">
+              <span class="text-hud-secondary font-bold uppercase block mb-2">// 2. CLOCK-POSITION DIRECTION MATH //</span>
+              <div class="p-3 bg-hud-surface rounded border border-hud-secondary/30 text-white text-sm mb-3">
+                θ_clock = round(12 + (X_norm × 3.0)) mod 12
+              </div>
+              <p class="text-hud-muted leading-relaxed">
+                Translates horizontal frame width into an intuitive 12-hour clock orientation (Left: 9-10h, Center: 12h, Right: 2-3h) for rapid cognitive processing under smoke.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Architecture & Tech Stack -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 font-mono text-xs">
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-border">
+            <span class="text-hud-primary font-bold uppercase mb-2 block">FRONTEND ENGINE</span>
+            <ul class="space-y-2 text-hud-muted">
+              <li>• HTML5 Canvas 2D 60 FPS Render Loop</li>
+              <li>• Web Speech API (Continuous Recognition)</li>
+              <li>• Native FLIR Ironbow Thermal LUT Shader</li>
+              <li>• Prioritized Audio Queue with Cooldowns</li>
+            </ul>
+          </div>
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-border">
+            <span class="text-hud-secondary font-bold uppercase mb-2 block">FASTAPI EDGE BACKEND</span>
+            <ul class="space-y-2 text-hud-muted">
+              <li>• Python FastAPI + WebSockets (/ws/detect)</li>
+              <li>• Multi-Hazard Spatial Threat Matrix Engine</li>
+              <li>• Monocular Depth Trigonometry Heuristic</li>
+              <li>• 15-20 FPS Low-Latency Frame Streaming</li>
+            </ul>
+          </div>
+          <div class="p-6 rounded-xl bg-hud-surface border border-hud-border">
+            <span class="text-hud-tertiary font-bold uppercase mb-2 block">OFFLINE-FIRST COMPLIANCE</span>
+            <ul class="space-y-2 text-hud-muted">
+              <li>• 100% Signal-Dead Disaster Zone Capable</li>
+              <li>• Zero External Cloud Latency Dependency</li>
+              <li>• Seamless Client-Side Edge Fallback</li>
+              <li>• Instant Judge Preset Simulation Hotkeys</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script Modules -->
+  <script src="js/threat_engine.js"></script>
+  <script src="js/thermal_shader.js"></script>
+  <script src="js/hud_renderer.js"></script>
+  <script src="js/voice_assistant.js"></script>
+  <script src="js/demo_controller.js"></script>
+
+  <!-- Application Orchestrator -->
+  <script>
+    class VisionHudApp {
+      constructor() {
+        this.threatEngine = new ThreatEngine();
+        this.thermalShader = new ThermalShaderEngine();
+        this.hudCanvas = document.getElementById("hudCanvas");
+        this.hudRenderer = new HudRenderer(this.hudCanvas);
+        this.webcamVideo = document.getElementById("webcamFeed");
+        this.fallbackImg = document.getElementById("fallbackFeed");
+
+        this.isWebcamActive = false;
+        this.isThermalActive = false;
+        this.isAudioMuted = false;
+        this.viewMode = "VISOR"; // "VISOR" or "BRIEFING"
+
+        this.currentDetections = [];
+        this.currentState = {
+          threatScore: 8,
+          threatLevel: "NOMINAL",
+          threatColor: "#00FF66",
+          compoundHazards: [],
+          activeAlerts: [],
+          exitVector: null,
+          detections: []
+        };
+
+        this.initVoiceAssistant();
+        this.demoController = new DemoController(this);
+        this.initDOMBindings();
+        this.initWebSocket();
+        this.startRenderLoop();
+        this.startClock();
+
+        // Start in Stage 1: Nominal
+        this.demoController.triggerNominal();
+      }
+
+      initVoiceAssistant() {
+        this.voiceAssistant = new VoiceAssistant({
+          onCommand: (cmd) => this.handleVoiceCommand(cmd),
+          onAlertLog: (log) => this.updateVoiceBanner(log.text)
+        });
+      }
+
+      handleVoiceCommand(command) {
+        if (command === "STATUS") {
+          this.reportStatus();
+        } else if (command === "THERMAL_ON") {
+          this.setThermal(true);
+        } else if (command === "THERMAL_OFF") {
+          this.setThermal(false);
+        } else if (command === "FIND_EXIT") {
+          const exitSign = this.currentDetections.find(d => d.classId === 6);
+          if (exitSign) {
+            this.voiceAssistant.speak(`Emergency exit locked at ${exitSign.clockPosition} o'clock, ${exitSign.distance} meters.`, { priority: 9 });
+          } else {
+            this.voiceAssistant.speak("No exit sign currently detected in optical field. Scanning corridors.", { priority: 7 });
+          }
+        } else if (command === "CLEAR_ALERT") {
+          this.updateVoiceBanner("Alerts silenced for 30 seconds.");
+        }
+      }
+
+      reportStatus() {
+        const casualties = this.currentDetections.filter(d => d.classId === 1).length;
+        const text = `Status ${this.currentState.threatLevel}. ${casualties} casualty detected. Threat index ${this.currentState.threatScore} percent.`;
+        this.voiceAssistant.speak(text, { priority: 9, force: true });
+      }
+
+      initDOMBindings() {
+        // Webcam toggle
+        document.getElementById("toggleWebcamBtn").addEventListener("click", () => this.toggleWebcam());
+
+        // Thermal toggle
+        document.getElementById("toggleThermalBtn").addEventListener("click", () => this.toggleThermal());
+        document.getElementById("pipThermalFeed").addEventListener("click", () => this.toggleThermal());
+
+        // Audio mute
+        document.getElementById("audioMuteBtn").addEventListener("click", () => this.toggleAudioMute());
+
+        // Mic toggle
+        document.getElementById("micToggleBtn").addEventListener("click", () => this.toggleMic());
+
+        // View toggle (Visor vs Briefing)
+        document.getElementById("viewToggleBtn").addEventListener("click", () => this.toggleView());
+
+        // Presets
+        document.getElementById("presetNominalBtn").addEventListener("click", () => this.demoController.triggerNominal());
+        document.getElementById("presetCasualtyBtn").addEventListener("click", () => this.demoController.triggerCasualty());
+        document.getElementById("presetCompoundBtn").addEventListener("click", () => this.demoController.triggerCompoundHazard());
+        document.getElementById("presetThermalExitBtn").addEventListener("click", () => this.demoController.triggerThermalAndExit());
+        document.getElementById("autoScriptBtn").addEventListener("click", () => this.demoController.toggleFullAutoScript());
+      }
+
+      initWebSocket() {
+        const badge = document.getElementById("wsStatusBadge");
+        try {
+          const ws = new WebSocket("ws://localhost:8000/ws/detect");
+          ws.onopen = () => {
+            badge.innerText = "CONNECTED (PORT 8000)";
+            badge.className = "text-hud-tertiary font-bold";
+          };
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              // Telemetry from edge backend
+            } catch (e) {}
+          };
+          ws.onerror = () => {
+            badge.innerText = "STANDALONE EDGE";
+            badge.className = "text-hud-primary";
+          };
+        } catch (e) {
+          badge.innerText = "STANDALONE EDGE";
+        }
+      }
+
+      toggleWebcam() {
+        if (this.isWebcamActive) {
+          if (this.webcamStream) {
+            this.webcamStream.getTracks().forEach(t => t.stop());
+          }
+          this.webcamVideo.srcObject = null;
+          this.webcamVideo.style.display = "none";
+          this.fallbackImg.style.display = "block";
+          this.isWebcamActive = false;
+          document.getElementById("webcamBtnText").innerText = "Use Real Webcam";
+        } else {
+          navigator.mediaDevices?.getUserMedia({ video: { width: 1280, height: 720 } })
+            .then(stream => {
+              this.webcamStream = stream;
+              this.webcamVideo.srcObject = stream;
+              this.webcamVideo.style.display = "block";
+              this.fallbackImg.style.display = "none";
+              this.isWebcamActive = true;
+              document.getElementById("webcamBtnText").innerText = "Disable Webcam";
+              this.voiceAssistant.speak("Optical camera locked and synchronized.", { priority: 5 });
+            })
+            .catch(err => {
+              alert("Unable to access camera or permission denied: " + err.message);
+            });
+        }
+      }
+
+      toggleThermal() {
+        this.setThermal(!this.isThermalActive);
+      }
+
+      setThermal(active) {
+        this.isThermalActive = active;
+        this.thermalShader.setMode(active);
+
+        const btnText = document.getElementById("thermalBtnText");
+        const visorEl = document.getElementById("visorContainer");
+
+        if (active) {
+          visorEl.classList.add("thermal-active-filter");
+          btnText.innerText = "Normal Vision";
+          document.getElementById("ambientTempText").innerText = "42.8°C [ELEVATED]";
+        } else {
+          visorEl.classList.remove("thermal-active-filter");
+          btnText.innerText = "Thermal Mode (IR)";
+          document.getElementById("ambientTempText").innerText = "34.2°C";
+        }
+      }
+
+      toggleAudioMute() {
+        this.isAudioMuted = !this.isAudioMuted;
+        const icon = document.getElementById("audioMuteIcon");
+        if (this.isAudioMuted) {
+          this.voiceAssistant.synth.cancel();
+          this.voiceAssistant.mutedUntil = Date.now() + 99999999;
+          icon.innerText = "volume_off";
+          icon.parentElement.classList.add("text-hud-alert");
+        } else {
+          this.voiceAssistant.mutedUntil = 0;
+          icon.innerText = "volume_up";
+          icon.parentElement.classList.remove("text-hud-alert");
+        }
+      }
+
+      toggleMic() {
+        if (this.voiceAssistant.isListening) {
+          this.voiceAssistant.stopListening();
+          document.getElementById("micLabel").innerText = "Voice: OFF";
+          document.getElementById("micIcon").innerText = "mic_off";
+        } else {
+          this.voiceAssistant.startListening();
+          document.getElementById("micLabel").innerText = "Voice: ON";
+          document.getElementById("micIcon").innerText = "mic";
+        }
+      }
+
+      toggleView() {
+        const visor = document.getElementById("visorSection");
+        const briefing = document.getElementById("briefingSection");
+        const label = document.getElementById("viewToggleLabel");
+
+        if (this.viewMode === "VISOR") {
+          visor.classList.add("hidden");
+          briefing.classList.remove("hidden");
+          this.viewMode = "BRIEFING";
+          label.innerText = "HUD Visor";
+        } else {
+          briefing.classList.add("hidden");
+          visor.classList.remove("hidden");
+          this.viewMode = "VISOR";
+          label.innerText = "Architecture";
+        }
+      }
+
+      setDetections(rawDetections) {
+        this.currentDetections = rawDetections;
+        const evaluated = this.threatEngine.evaluate(
+          rawDetections, 
+          this.hudCanvas.width || 1280, 
+          this.hudCanvas.height || 720
+        );
+        this.currentState = evaluated;
+
+        this.updateHUDUI(evaluated);
+      }
+
+      updateHUDUI(state) {
+        // 1. Update Threat Badge
+        const badge = document.getElementById("topThreatBadge");
+        const dot = document.getElementById("topThreatDot");
+        const text = document.getElementById("topThreatText");
+
+        text.innerText = `THREAT: ${state.threatLevel} [${state.threatScore.toString().padStart(2, '0')}%]`;
+        
+        badge.className = "hidden sm:flex items-center gap-2 px-3 py-1 rounded bg-hud-surface transition-all duration-300";
+        if (state.threatLevel === "CRITICAL") {
+          badge.classList.add("border-hud-alert", "glow-red", "threat-pulse-critical");
+          dot.className = "w-2.5 h-2.5 rounded-full bg-hud-alert animate-ping";
+        } else if (state.threatLevel === "HIGH") {
+          badge.classList.add("border-[#FF6600]", "glow-amber", "threat-pulse-high");
+          dot.className = "w-2.5 h-2.5 rounded-full bg-[#FF6600] animate-ping";
+        } else if (state.threatLevel === "MODERATE") {
+          badge.classList.add("border-hud-secondary", "glow-amber");
+          dot.className = "w-2.5 h-2.5 rounded-full bg-hud-secondary";
+        } else {
+          badge.classList.add("border-hud-tertiary", "glow-green");
+          dot.className = "w-2.5 h-2.5 rounded-full bg-hud-tertiary animate-pulse";
+        }
+
+        // 2. Target Count & Stack List
+        document.getElementById("targetCountBadge").innerText = `${state.detectedItems.length} LOCKED`;
+        const listContainer = document.getElementById("targetListContainer");
+        listContainer.innerHTML = "";
+
+        state.detectedItems.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "flex items-center justify-between p-1.5 rounded bg-black/50 border text-xs font-mono";
+          row.style.borderColor = `${item.color}55`;
+
+          row.innerHTML = `
+            <div class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${item.color};"></span>
+              <span class="text-white font-semibold text-[11px] truncate max-w-[130px]">${item.name}</span>
+            </div>
+            <div class="flex items-center gap-2 font-mono text-[10px]">
+              <span class="text-hud-muted">${item.distance}m</span>
+              <span class="text-hud-primary font-bold">[${item.clockPosition}h]</span>
+            </div>
+          `;
+          listContainer.appendChild(row);
+        });
+
+        // 3. Compound Hazard Alert Box
+        const compContainer = document.getElementById("compoundHazardContainer");
+        if (state.compoundHazards && state.compoundHazards.length > 0) {
+          compContainer.classList.remove("hidden");
+          const h = state.compoundHazards[0];
+          document.getElementById("compoundHazardTitle").innerText = h.title;
+          document.getElementById("compoundHazardDesc").innerText = h.message;
+        } else {
+          compContainer.classList.add("hidden");
+        }
+      }
+
+      updateStageBadge(text, level) {
+        const el = document.getElementById("currentStageText");
+        el.innerText = text;
+        if (level === "CRITICAL") {
+          el.className = "text-hud-alert font-bold animate-pulse";
+        } else if (level === "URGENT") {
+          el.className = "text-hud-secondary font-bold";
+        } else if (level === "SAFE_ROUTE") {
+          el.className = "text-hud-tertiary font-bold";
+        } else {
+          el.className = "text-hud-primary font-bold";
+        }
+      }
+
+      updateVoiceBanner(msg) {
+        document.getElementById("voiceBannerText").innerText = `"${msg}"`;
+      }
+
+      startClock() {
+        const clockEl = document.getElementById("clockDisplay");
+        setInterval(() => {
+          const now = new Date();
+          clockEl.innerText = now.toTimeString().split(" ")[0];
+        }, 1000);
+      }
+
+      startRenderLoop() {
+        const loop = () => {
+          this.hudRenderer.render({
+            ...this.currentState,
+            detections: this.currentDetections
+          });
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      window.app = new VisionHudApp();
+    });
+  </script>
+</body>
+</html>

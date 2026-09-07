@@ -1,0 +1,474 @@
+<!DOCTYPE html><html class="dark scroll-smooth" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>VisionHUD // AI Tactical Vision for Rescue Workers</title>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,300;0,400;0,600;0,700;1,400&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .hud-glow-cyan { text-shadow: 0 0 14px rgba(0,240,255,0.65); }
+    .hud-glow-amber { text-shadow: 0 0 14px rgba(255,183,0,0.65); }
+    .hud-box-cyan { box-shadow: 0 0 20px rgba(0,240,255,0.25); }
+    .hud-box-red { box-shadow: 0 0 22px rgba(255,0,51,0.35); }
+    .hud-box-amber { box-shadow: 0 0 20px rgba(255,183,0,0.25); }
+    .hud-glass-card {
+      background: linear-gradient(135deg, rgba(9,19,38,0.85) 0%, rgba(4,8,16,0.92) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#040810",
+            "surface": "#091326",
+            "surface-dim": "#040810",
+            "surface-bright": "#1a253c",
+            "surface-container-lowest": "#02050b",
+            "surface-container-low": "#0b162c",
+            "surface-container": "#111f3c",
+            "surface-container-high": "#182a4f",
+            "surface-container-highest": "#213663",
+            "primary": "#00f0ff",
+            "primary-container": "#00f0ff",
+            "on-primary": "#002022",
+            "on-primary-container": "#002022",
+            "primary-fixed": "#7df4ff",
+            "secondary": "#ffb700",
+            "secondary-container": "#ffb700",
+            "on-secondary": "#271900",
+            "tertiary": "#00ff66",
+            "tertiary-container": "#00fa64",
+            "on-tertiary": "#002107",
+            "error": "#ff0033",
+            "error-container": "#93000a",
+            "on-surface": "#d9e2fd",
+            "on-surface-variant": "#9db0c6",
+            "outline": "#4b607e",
+            "outline-variant": "#22334f"
+          },
+          fontFamily: {
+            "display-lg": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "headline-md": ["Space Grotesk", "sans-serif"],
+            "body-lg": ["Chivo", "sans-serif"],
+            "body-md": ["Chivo", "sans-serif"],
+            "label-lg": ["Space Mono", "monospace"],
+            "label-md": ["Space Mono", "monospace"],
+            "telemetry-num": ["Space Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary">
+<!-- 1. NAVIGATION BAR -->
+<header class="fixed top-0 left-0 right-0 w-full z-50 bg-[#040810]/90 backdrop-blur-xl border-b border-outline-variant/60">
+<div class="max-w-[1440px] mx-auto h-20 px-6 sm:px-10 flex items-center justify-between gap-6">
+<!-- Brand Logo -->
+<a class="flex items-center gap-3 shrink-0 group" href="#">
+<div class="w-10 h-10 rounded-lg bg-surface-container border border-primary/50 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.4)] group-hover:border-primary transition-all overflow-hidden p-1"><img alt="VisionHUD Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UBXvdyJKBhFuh7osbAR36__BYjR6CyaL3oUJy0Xu0gwpGJ3TUXvC8QbjThwiQze5XOnDMqQ1aC0KNS7Gyk52AqqvN9khqIDGkK49WI60PxsXzcmtJqJFPV1SJwiubwPbgthmTEhtkQjVkPpCTYh7yYuyRjpzv3Y_yH8bphD5VU_Jfsqkx6hUL5HIFDe-zv_EyQc1DJ4G9u4SMfTtI1ANLNmAeFJsZmuTZg41iAqBMQR3sVRuZFt9zozQ"></div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md font-bold tracking-wider text-white text-[20px]">Vision<span class="text-primary">HUD</span></span>
+<span class="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</div>
+<span class="font-label-md text-[10px] text-primary/80 uppercase tracking-widest font-bold">TACTICAL EDGE AI</span>
+</div>
+</a>
+<!-- Nav Links -->
+<nav class="hidden lg:flex items-center gap-8 font-label-md text-xs uppercase tracking-widest text-on-surface-variant font-bold">
+<a class="hover:text-primary transition-colors" href="#demo">DEMO</a>
+<a class="hover:text-primary transition-colors" href="#how-it-works">HOW IT WORKS</a>
+<a class="hover:text-primary transition-colors" href="#risk-engine">THE RISK ENGINE</a>
+<a class="hover:text-primary transition-colors" href="#offline">OFFLINE</a>
+<a class="hover:text-primary transition-colors" href="#tech">TECH</a>
+</nav>
+<!-- Action Button -->
+<div class="flex items-center gap-4"><a class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded border border-primary/40 bg-surface-container/80 text-primary font-label-md text-xs font-bold uppercase tracking-wider hover:border-primary hover:bg-primary/10 transition-all" href="#login"><span class="material-symbols-outlined text-[16px]">lock_open</span><span class="">Operator Login</span></a>
+<a class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-primary text-on-primary font-label-lg text-xs font-bold uppercase tracking-wider shadow-[0_0_18px_rgba(0,240,255,0.4)] hover:bg-primary-fixed hover:shadow-[0_0_24px_rgba(0,240,255,0.7)] transition-all" href="#demo">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+<span class="">Launch Live Demo</span>
+</a>
+</div>
+</div>
+</header>
+<main class="w-full pt-20">
+<!-- 2. HERO SECTION -->
+<section class="relative w-full pt-14 pb-20 px-4 sm:px-8 lg:px-12 overflow-hidden border-b border-outline-variant/40"><div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: linear-gradient(to right, #00f0ff 1px, transparent 1px), linear-gradient(to bottom, #00f0ff 1px, transparent 1px); background-size: 48px 48px;"></div><div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/10 rounded-full blur-[140px] pointer-events-none"></div><div class="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"><div class="lg:col-span-6 flex flex-col items-start text-left"><div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-container border border-primary/30 mb-5 shadow-[0_0_15px_rgba(0,240,255,0.15)]"><span class="w-2 h-2 rounded-full bg-tertiary animate-ping"></span><span class="font-label-md text-xs uppercase tracking-widest text-primary font-bold">VISIONHUD // TACTICAL RESCUE SUITE</span></div><h1 class="font-display-lg text-3xl sm:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-white leading-[1.08] mb-5">AI-Powered Tactical Vision <span class="text-primary hud-glow-cyan block sm:inline">for Rescue Workers</span></h1><p class="font-body-lg text-base sm:text-xl text-on-surface-variant font-medium mb-6 max-w-xl">See hazards. Find victims. Navigate danger. Hands-free.</p><div class="grid grid-cols-2 gap-2.5 sm:gap-3 mb-8 w-full max-w-lg"><div class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container/90 border border-error/40 text-on-surface font-label-md text-xs sm:text-sm font-semibold shadow-[0_0_12px_rgba(255,0,51,0.2)]"><span class="">🔥</span><span class="">Hazard Detection</span></div><div class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container/90 border border-primary/40 text-on-surface font-label-md text-xs sm:text-sm font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]"><span class="">🧍</span><span class="">Victim Detection</span></div><div class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container/90 border border-secondary/40 text-on-surface font-label-md text-xs sm:text-sm font-semibold shadow-[0_0_12px_rgba(255,183,0,0.2)]"><span class="">📏</span><span class="">Distance &amp; Direction</span></div><div class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container/90 border border-tertiary/40 text-on-surface font-label-md text-xs sm:text-sm font-semibold shadow-[0_0_12px_rgba(0,255,102,0.2)]"><span class="">🔊</span><span class="">Voice Alerts</span></div></div><div class="flex flex-wrap items-center gap-4"><a class="inline-flex items-center gap-3 px-8 py-3.5 rounded-lg bg-primary text-on-primary font-label-lg text-sm sm:text-base font-bold uppercase tracking-wider shadow-[0_0_28px_rgba(0,240,255,0.5)] hover:bg-primary-fixed hover:scale-105 transition-all" href="#demo"><span class="material-symbols-outlined text-[22px]">play_arrow</span><span class="">Launch Live Demo</span></a><a class="inline-flex items-center gap-2 px-5 py-3.5 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-xs sm:text-sm font-bold uppercase tracking-wider hover:border-primary transition-all" href="#how-it-works"><span class="material-symbols-outlined text-[18px]">schema</span><span class="">How It Works</span></a></div></div><div class="lg:col-span-6 w-full"><div class="w-full relative rounded-2xl overflow-hidden border-2 border-primary/50 shadow-[0_0_40px_rgba(0,240,255,0.25)] bg-surface-container-lowest group text-left"><div class="absolute top-0 left-0 right-0 z-30 px-3 sm:px-4 py-2 bg-gradient-to-b from-black/95 via-black/70 to-transparent flex items-center justify-between font-label-md text-xs border-b border-primary/20 backdrop-blur-md"><div class="flex items-center gap-2"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span></span><span class="text-primary font-bold tracking-widest uppercase text-[10px] sm:text-[11px]">LWIR 8-14μm // SPECTRUM ACTIVE</span></div><div class="flex items-center gap-2 text-on-surface-variant text-[10px]"><span class="font-telemetry-num text-tertiary flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span> 2 TARGETS LOCKED</span><span class="px-1.5 py-0.5 rounded bg-error/20 border border-error/40 text-error font-bold text-[9px]">450°C</span></div></div><div class="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden"><img alt="Firefighter rescue operation in collapsed rubble" class="w-full h-full object-cover filter brightness-95 contrast-125 select-none" src="https://lh3.googleusercontent.com/aida/AEtjO1VLe-ICSp0ymPr6Q4yiB5nft_pjEh3nX3iF5xnuZRT01w-8R9y_tfyX5ObAvjgQaQBnbnyHU_TIMwK8OM3etkqBPNDC3bTNTSJJFbhlmBQ83m2R7hL3IaP86xL-crO_j73_suPG0yHkknhs8hqHYLEfshenLTtcTI159Hlw6BQjzcffD2RcQuRRqKn1rwElvK5zzGmEBK7uUi1X0ayc8HgV9Dalwn9Z8BzJaedTPFK90zqLw3r4LfLQpA"><div class="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.28)_0px,rgba(0,0,0,0.28)_1px,transparent_1px,transparent_4px)] opacity-60"></div><div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/90 via-transparent to-black/60"></div><div class="absolute top-[18%] left-[8%] z-20 pointer-events-none"><div class="w-24 sm:w-32 h-32 sm:h-40 border-2 border-primary/80 rounded relative hud-box-cyan"><div class="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-white"></div><div class="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-white"></div><div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-white"></div><div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-white"></div><div class="absolute -top-3 left-1 px-1.5 py-0.5 bg-primary text-on-primary font-label-md text-[8px] sm:text-[9px] font-bold rounded shadow-[0_0_8px_#00f0ff]"><span class="">TARGET 01: LEAD</span></div></div></div><div class="absolute top-[22%] right-[10%] z-20 pointer-events-none"><div class="w-24 sm:w-28 h-28 sm:h-36 border-2 border-secondary/80 rounded relative hud-box-amber"><div class="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-white"></div><div class="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-white"></div><div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-white"></div><div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-white"></div><div class="absolute -top-3 left-1 px-1.5 py-0.5 bg-secondary text-on-secondary font-label-md text-[8px] sm:text-[9px] font-bold rounded shadow-[0_0_8px_#ffb700]"><span class="">TARGET 02: CREW</span></div></div></div><div class="absolute bottom-4 left-4 z-20 max-w-[280px] sm:max-w-xs p-2.5 rounded-lg hud-glass-card border border-primary/50 shadow-lg"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-primary/20 text-primary border border-primary/40 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[15px]">graphic_eq</span></div><div><span class="text-[9px] font-label-md text-primary font-bold block uppercase">JARVIS SYNTHETIC AUDIO</span><p class="font-body-md text-[11px] text-white italic">"Advise re-routing heading 035° North."</p></div></div></div><div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-40"><div class="w-12 h-12 border border-primary/60 rounded-full flex items-center justify-center"><div class="w-1.5 h-1.5 bg-primary rounded-full"></div></div></div></div><div class="px-4 py-2 bg-surface-container-low border-t border-primary/30 flex items-center justify-between text-[11px] font-label-md z-30 relative"><div class="flex items-center gap-3"><span class="text-primary font-bold">JARVIS RECOGNITION V2</span><span class="text-secondary font-telemetry-num">LOCK: 450°C</span></div><div class="flex items-center gap-2 text-on-surface-variant"><span class="text-primary font-telemetry-num">60 FPS SYNC</span></div></div></div></div></div></section>
+<!-- 3. LIVE DEMO SECTION (THE WOW MOMENT - LARGEST SECTION ON PAGE) -->
+<section class="w-full py-16 lg:py-24 px-4 sm:px-8 bg-surface-container-lowest relative border-b border-outline-variant/50" id="demo"><div class="max-w-[1400px] mx-auto">
+  <!-- Section Title & Status -->
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+    <div>
+      <div class="inline-flex items-center gap-2 font-label-md text-xs font-bold text-primary tracking-widest uppercase mb-2">
+        <span class="material-symbols-outlined text-[16px]">videocam</span>
+        <span class="">TACTICAL WEBCAM VIEWPORT // SIMULATED RUNTIME</span>
+      </div>
+      <h2 class="font-headline-lg text-3xl sm:text-4xl text-white font-bold tracking-tight uppercase">LIVE TACTICAL DEMO // WEBCAM VIEWPORT</h2>
+    </div>
+    <!-- Preset Controls -->
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="font-label-md text-xs text-on-surface-variant mr-1 tracking-widest uppercase">JUDGE PRESETS:</span>
+      <button class="px-4 py-1.5 rounded-lg bg-surface-container border border-error text-error font-label-md text-xs font-bold hover:bg-error hover:text-white transition-all">
+        Fire Alert
+      </button>
+      <button class="px-4 py-1.5 rounded-lg bg-surface-container border border-secondary text-secondary font-label-md text-xs font-bold hover:bg-secondary hover:text-on-secondary transition-all">
+        Hazard Card
+      </button>
+      <button class="px-4 py-1.5 rounded-lg bg-surface-container border border-primary text-primary font-label-md text-xs font-bold hover:bg-primary hover:text-on-primary transition-all">
+        Casualty Lock
+      </button>
+    </div>
+  </div>
+
+  <!-- Massive Visor Canvas Frame -->
+  <div class="relative w-full rounded-2xl overflow-hidden border-2 border-primary/50 bg-black shadow-[0_0_50px_rgba(0,240,255,0.2)]">
+    <!-- Top Telemetry Bar inside HUD -->
+    <div class="absolute top-0 left-0 right-0 z-30 px-4 sm:px-6 py-3 bg-gradient-to-b from-black/90 via-black/60 to-transparent flex items-center justify-between text-xs font-label-md">
+      <div class="flex items-center gap-4 sm:gap-6">
+        <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/80 border border-tertiary/60 text-tertiary font-bold tracking-wider text-[11px] sm:text-xs">
+          <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+          <span class="">VISIONHUD • LIVE</span>
+        </div>
+        <div class="flex items-center gap-3 text-on-surface-variant text-[11px] sm:text-xs font-label-md tracking-wider">
+          <span class="">FPS: <strong class="text-white font-telemetry-num">60</strong></span>
+          <span class="">EDGE INFERENCE: <strong class="text-primary font-telemetry-num">LOCAL ONNX</strong></span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-on-surface-variant text-[11px] sm:text-xs font-label-md tracking-wider">
+        <span class="">LAT: <strong class="text-white font-telemetry-num">37.7749° N</strong></span>
+        <span class="">BEARING: <strong class="text-secondary font-telemetry-num">014° NNE</strong></span>
+      </div>
+    </div>
+
+    <!-- Video / Visor Background Layer -->
+    <div class="relative w-full aspect-[16/9] min-h-[480px] lg:min-h-[700px] bg-surface-container-lowest overflow-hidden">
+      <img alt="Tactical visor AR camera overlay" class="w-full h-full object-cover filter brightness-90 contrast-125 select-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5jLISmyPXMfDSzH54JHggIC8cK5G2Muo_c-AhbxTCOOCVk8R-yM8GBrIzlF2F0psOIwAc_cmYWIv6xxlhwV8E-JeunKg6nu1tZSSWSRvPREDvK1IhPnkzXmgoiMUd2jDx68QLwtvJ5FrSkEnP7liOBBP8unowdBQHjKpzqQ1ToSCcVP8mkz1TBX0wA_w_DLw8zPmKdkkDMs-zjtsIA3JC3HLvGVUK668XZzTVPbtBIsncRgJfdw7bAotzl7SSA9Ji">
+
+      <!-- Scanline scan effect -->
+      <div class="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.25)_0px,rgba(0,0,0,0.25)_1px,transparent_1px,transparent_4px)]"></div>
+      <!-- Visor Vignette -->
+      <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/90 via-transparent to-black/60"></div>
+      <!-- Center horizontal tactical horizon guide -->
+      <div class="absolute top-1/2 left-0 right-0 h-px bg-white/40 pointer-events-none z-10"></div>
+
+      <!-- RETICLE 1: Fire Hazard (Top Left) -->
+      
+
+      <!-- RETICLE 2: Flammable Container (Top Right/Middle) -->
+      
+
+      <!-- RETICLE 3: Possible Victim (Center / Lower Middle) -->
+      
+
+      <!-- RETICLE 4: Egress Waypoint (Exit Clear) -->
+      
+
+      <!-- Inset Thermal PiP Feed (Bottom Right) -->
+      <div class="hidden sm:block absolute bottom-6 right-6 z-20 w-52 rounded-lg overflow-hidden border border-primary/60 bg-black shadow-2xl">
+        <div class="px-2.5 py-1.5 bg-surface-container flex items-center justify-between text-[9px] font-label-md text-primary font-bold">
+          <span class="">LWIR SENSOR FEED</span>
+          <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+        </div>
+        <img alt="FLIR thermal stream" class="w-full h-24 object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1WQLPtgvuraPXBpSD-IVfMN9FSwQoTcJhifB1T3wkR2HEk2XXL9gIwhDH7HaH7JgkJhxdePlWz44_zbV2uOXlQDD70oBAUMS3pDHyCpBvtbQTWApLEpiIbZrWyzcBK7Uo6QDGLGLJaQjQofvJb0FlMHnG3RUJEEL4nKEw3Wu7qe6o6FIi0SqL-a4qzSZkpp0ho-qtNu1B80qh7HSMUsjUYddP6Ed5lBUa9KUgOqIiSdPHB_7Q5wsgN5yA">
+      </div>
+    </div>
+
+    <!-- Bottom Live Telemetry Strip Bar -->
+    <div class="px-4 sm:px-8 py-3.5 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-4 font-label-md text-xs sm:text-sm z-30 relative">
+      <div class="flex items-center gap-6 sm:gap-8">
+        <div class="flex items-center gap-2">
+          <div class="flex flex-col items-center">
+            <span class="text-on-surface-variant font-bold text-xs uppercase">THREAT LEVEL:</span>
+            <span class="text-error font-bold text-[10px] tracking-wider mt-0.5">HIGH</span>
+          </div>
+          <div class="px-3 py-1 rounded-full bg-error/20 border border-error flex items-center justify-center">
+            <span class="w-3 h-3 rounded-full bg-error inline-block"></span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-on-surface-variant font-bold uppercase">VICTIMS:</span>
+          <span class="text-primary font-bold text-sm sm:text-base font-telemetry-num">1 DETECTED</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-on-surface-variant font-bold uppercase">HAZARDS:</span>
+          <span class="text-secondary font-bold text-sm sm:text-base font-telemetry-num">2 ACTIVE</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-outline text-xs font-label-md tracking-wider">
+        <span class="">MODEL: <strong class="text-on-surface-variant font-telemetry-num">YOLOv8-RESCUE</strong></span>
+        <div class="h-3 w-px bg-outline-variant"></div>
+        <span class="">CALCULUS: <strong class="text-tertiary font-telemetry-num">MONOCULAR TRIG</strong></span>
+      </div>
+    </div>
+
+    <!-- Audio Synthetic Voice Alert Banner -->
+    
+  </div>
+</div></section>
+<!-- 4. WHAT VISIONHUD DETECTS (STRICTLY 4 CARDS ONLY, NO 100-WORD ESSAYS) -->
+<section class="w-full py-16 px-6 sm:px-10 bg-background border-b border-outline-variant/40">
+<div class="max-w-6xl mx-auto">
+<div class="text-center max-w-2xl mx-auto mb-12">
+<span class="font-label-md text-xs text-primary font-bold tracking-widest uppercase mb-2 block">EDGE CAPABILITIES</span>
+<h2 class="font-headline-lg text-3xl sm:text-4xl text-white font-bold tracking-tight uppercase">
+            What VisionHUD Detects
+          </h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1: Hazards -->
+<div class="p-6 rounded-xl bg-surface-container border border-error/30 hover:border-error transition-all group">
+<div class="w-12 h-12 rounded-lg bg-error/15 border border-error/40 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+              🔥
+            </div>
+<h3 class="font-headline-md text-lg text-white font-bold mb-2">Hazards</h3>
+<p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
+              Fire, heavy smoke, pressurized gas cylinders, toxic chemicals, and exposed electrical arcs.
+            </p>
+</div>
+<!-- Card 2: Victims -->
+<div class="p-6 rounded-xl bg-surface-container border border-primary/30 hover:border-primary transition-all group">
+<div class="w-12 h-12 rounded-lg bg-primary/15 border border-primary/40 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+              🧍
+            </div>
+<h3 class="font-headline-md text-lg text-white font-bold mb-2">Victims</h3>
+<p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
+              Detect trapped people, prone civilians, and possible casualties across obscured rubble.
+            </p>
+</div>
+<!-- Card 3: Tactical Awareness -->
+<div class="p-6 rounded-xl bg-surface-container border border-secondary/30 hover:border-secondary transition-all group">
+<div class="w-12 h-12 rounded-lg bg-secondary/15 border border-secondary/40 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+              🧭
+            </div>
+<h3 class="font-headline-md text-lg text-white font-bold mb-2">Tactical Awareness</h3>
+<p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
+              Clock-direction azimuth, approximate distance calculations, and real-time object coordinates.
+            </p>
+</div>
+<!-- Card 4: Instant Alerts -->
+<div class="p-6 rounded-xl bg-surface-container border border-tertiary/30 hover:border-tertiary transition-all group">
+<div class="w-12 h-12 rounded-lg bg-tertiary/15 border border-tertiary/40 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+              🔊
+            </div>
+<h3 class="font-headline-md text-lg text-white font-bold mb-2">Instant Alerts</h3>
+<p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
+              Clear synthesized voice warnings and high-visibility holographic visual HUD notifications.
+            </p>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. HOW IT WORKS (VISUAL PIPELINE, NO GIANT PARAGRAPHS) -->
+<section class="w-full py-16 lg:py-20 px-6 sm:px-10 bg-surface-container-lowest border-b border-outline-variant/40" id="how-it-works">
+<div class="max-w-6xl mx-auto">
+<div class="text-center max-w-3xl mx-auto mb-12">
+<span class="font-label-md text-xs text-primary font-bold tracking-widest uppercase mb-2 block">DATA PIPELINE</span>
+<h2 class="font-headline-lg text-3xl sm:text-4xl text-white font-bold tracking-tight uppercase mb-4">
+            How It Works
+          </h2>
+<!-- Single clear summary sentence -->
+<p class="font-body-lg text-base sm:text-lg text-primary-fixed font-medium">
+            VisionHUD converts a live camera feed into actionable information for frontline responders.
+          </p>
+</div>
+<!-- Visual Horizontal Pipeline Flow -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-stretch relative">
+<!-- Step 1: Camera -->
+<div class="p-5 rounded-lg bg-surface-container border border-outline-variant flex flex-col items-center text-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-2xl mb-3">
+              📷
+            </div>
+<span class="font-label-md text-xs text-outline font-bold uppercase mb-1">STAGE 01</span>
+<h4 class="font-headline-md text-base text-white font-bold mb-1">CAMERA</h4>
+<p class="font-body-md text-xs text-on-surface-variant">Optical / Thermal stream input</p>
+</div>
+<!-- Step 2: Computer Vision -->
+<div class="p-5 rounded-lg bg-surface-container border border-primary/40 flex flex-col items-center text-center">
+<div class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center text-2xl mb-3">
+              👁️
+            </div>
+<span class="font-label-md text-xs text-primary font-bold uppercase mb-1">STAGE 02</span>
+<h4 class="font-headline-md text-base text-white font-bold mb-1">COMPUTER VISION</h4>
+<p class="font-body-md text-xs text-on-surface-variant">YOLO + OCR + Depth math</p>
+</div>
+<!-- Step 3: Risk Engine -->
+<div class="p-5 rounded-lg bg-surface-container border border-secondary/40 flex flex-col items-center text-center">
+<div class="w-12 h-12 rounded-full bg-secondary/20 text-secondary flex items-center justify-center text-2xl mb-3">
+              🧠
+            </div>
+<span class="font-label-md text-xs text-secondary font-bold uppercase mb-1">STAGE 03</span>
+<h4 class="font-headline-md text-base text-white font-bold mb-1">RISK ENGINE</h4>
+<p class="font-body-md text-xs text-on-surface-variant">Proximity &amp; hazard correlation</p>
+</div>
+<!-- Step 4: Tactical HUD -->
+<div class="p-5 rounded-lg bg-surface-container border border-tertiary/40 flex flex-col items-center text-center">
+<div class="w-12 h-12 rounded-full bg-tertiary/20 text-tertiary flex items-center justify-center text-2xl mb-3">
+              🎯
+            </div>
+<span class="font-label-md text-xs text-tertiary font-bold uppercase mb-1">STAGE 04</span>
+<h4 class="font-headline-md text-base text-white font-bold mb-1">TACTICAL HUD</h4>
+<p class="font-body-md text-xs text-on-surface-variant">Real-time AR reticles &amp; bearings</p>
+</div>
+<!-- Step 5: Voice Alert -->
+<div class="p-5 rounded-lg bg-surface-container border border-error/40 flex flex-col items-center text-center">
+<div class="w-12 h-12 rounded-full bg-error/20 text-error flex items-center justify-center text-2xl mb-3">
+              🔊
+            </div>
+<span class="font-label-md text-xs text-error font-bold uppercase mb-1">STAGE 05</span>
+<h4 class="font-headline-md text-base text-white font-bold mb-1">VOICE ALERT</h4>
+<p class="font-body-md text-xs text-on-surface-variant">Spoken spatial audio callouts</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 6. THE "SMART" PART: FROM DETECTION -> DECISION -->
+<section class="w-full py-16 lg:py-20 px-6 sm:px-10 bg-surface border-b border-outline-variant/40" id="risk-engine">
+<div class="max-w-5xl mx-auto">
+<div class="text-center max-w-2xl mx-auto mb-12">
+<span class="font-label-md text-xs text-secondary font-bold tracking-widest uppercase mb-2 block">THE "SMART" PART</span>
+<h2 class="font-headline-lg text-3xl sm:text-4xl text-white font-bold tracking-tight uppercase mb-3">
+            From Detection → Decision
+          </h2>
+<p class="font-body-md text-sm text-on-surface-variant">
+            Why VisionHUD goes beyond standard bounding boxes: compounding individual objects into critical survival decisions.
+          </p>
+</div>
+<!-- 3-Step Decision Flow Comparison -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+<!-- Step 1: AI Detects -->
+<div class="p-6 rounded-xl bg-surface-container-low border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-md text-xs text-primary font-bold uppercase">STEP 1</span>
+<span class="material-symbols-outlined text-outline text-[20px]">view_in_ar</span>
+</div>
+<h3 class="font-headline-md text-base text-white font-bold mb-3 uppercase tracking-wider">AI DETECTS</h3>
+<div class="space-y-2 font-label-md text-xs">
+<div class="p-2 rounded bg-surface-container border border-outline-variant/60 flex items-center gap-2">
+<span class="">🔥</span>
+<span class="text-on-surface">Fire Plume</span>
+</div>
+<div class="p-2 rounded bg-surface-container border border-outline-variant/60 flex items-center gap-2">
+<span class="">🛢️</span>
+<span class="text-on-surface">Flammable Container</span>
+</div>
+<div class="p-2 rounded bg-surface-container border border-outline-variant/60 flex items-center gap-2">
+<span class="">🧍</span>
+<span class="text-on-surface">Downed Person</span>
+</div>
+</div>
+</div>
+<span class="text-[11px] font-label-md text-outline mt-4">Isolated object labels only</span>
+</div>
+<!-- Step 2: Risk Engine -->
+<div class="p-6 rounded-xl bg-surface-container-low border border-secondary/50 flex flex-col justify-between shadow-[0_0_20px_rgba(255,183,0,0.1)]">
+<div>
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-md text-xs text-secondary font-bold uppercase">STEP 2</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">schema</span>
+</div>
+<h3 class="font-headline-md text-base text-secondary font-bold mb-3 uppercase tracking-wider">RISK ENGINE</h3>
+<div class="p-3 rounded bg-secondary/10 border border-secondary/30 font-label-md text-xs text-secondary-container leading-relaxed">
+                Fire + Flammable Material in proximity <br>
+<strong class="text-white block mt-2 font-telemetry-num">➔ CRITICAL EXPLOSION RISK</strong>
+</div>
+</div>
+<span class="text-[11px] font-label-md text-secondary mt-4">Spatial heuristic correlation</span>
+</div>
+<!-- Step 3: Responder Alert -->
+<div class="p-6 rounded-xl bg-surface-container-low border border-error/50 flex flex-col justify-between shadow-[0_0_25px_rgba(255,0,51,0.15)]">
+<div>
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-md text-xs text-error font-bold uppercase">STEP 3</span>
+<span class="material-symbols-outlined text-error text-[20px]">notifications_active</span>
+</div>
+<h3 class="font-headline-md text-base text-error font-bold mb-3 uppercase tracking-wider">RESPONDER ALERT</h3>
+<div class="p-3 rounded bg-error/15 border border-error/40 text-xs font-label-md text-white">
+<span class="inline-block px-1.5 py-0.5 rounded bg-error text-white font-bold mb-2">🔴 CRITICAL</span>
+<p class="font-bold text-sm leading-snug">
+                  "Flammable material near fire."
+                </p>
+<p class="text-on-surface-variant text-[11px] mt-1">
+                  Egress rerouted to south exit corridor.
+                </p>
+</div>
+</div>
+<span class="text-[11px] font-label-md text-error mt-4">Immediate tactical survival action</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 7. OFFLINE-FIRST ARCHITECTURE (CONCISE, HIGH-IMPACT) -->
+<section class="w-full py-16 px-6 sm:px-10 bg-surface-container-lowest border-b border-outline-variant/40" id="offline">
+<div class="max-w-4xl mx-auto text-center">
+<span class="font-label-md text-xs text-tertiary font-bold tracking-widest uppercase mb-2 block">RELIABILITY IN ZERO-SIGNAL ZONES</span>
+<h2 class="font-headline-lg text-3xl sm:text-4xl text-white font-bold tracking-tight uppercase mb-4">
+          "Works when connectivity doesn't."
+        </h2>
+<p class="font-body-lg text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto mb-8">
+          Core detection runs locally, allowing VisionHUD to remain functional in low-connectivity environments.
+        </p>
+<!-- Compact Architecture Flow -->
+<div class="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-4 rounded-xl bg-surface-container border border-outline-variant font-label-md text-xs sm:text-sm font-bold shadow-lg">
+<span class="px-3 py-1.5 rounded bg-surface-container-high text-primary border border-primary/30">LOCAL AI</span>
+<span class="text-outline">➔</span>
+<span class="px-3 py-1.5 rounded bg-surface-container-high text-secondary border border-secondary/30">YOLO</span>
+<span class="text-outline">➔</span>
+<span class="px-3 py-1.5 rounded bg-surface-container-high text-white border border-outline-variant">RISK ENGINE</span>
+<span class="text-outline">➔</span>
+<span class="px-3 py-1.5 rounded bg-tertiary/20 text-tertiary border border-tertiary/40">HUD + VOICE</span>
+</div>
+<div class="mt-6 flex items-center justify-center gap-6 text-xs font-label-md text-outline">
+<span class="">AIRGAPPED COMPLIANT</span>
+<span class="">•</span>
+<span class="">ZERO CLOUD DEPENDENCY</span>
+<span class="">•</span>
+<span class="">REAL-TIME EDGE PROCESSING</span>
+</div>
+</div>
+</section>
+<!-- 8. TECHNOLOGY SECTION ("BUILT WITH") -->
+<section class="w-full py-16 px-6 sm:px-10 bg-background" id="tech">
+<div class="max-w-4xl mx-auto text-center">
+<span class="font-label-md text-xs text-primary font-bold tracking-widest uppercase mb-2 block">HACKATHON STACK</span>
+<h2 class="font-headline-lg text-3xl sm:text-4xl text-white font-bold tracking-tight uppercase mb-8">
+          Built With
+        </h2>
+<!-- Clean tech stack badges -->
+<div class="flex flex-wrap items-center justify-center gap-3 max-w-2xl mx-auto">
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">React</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">FastAPI</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">YOLO</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">OCR</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">Depth AI</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">WebSockets</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface font-label-md text-sm font-semibold hover:border-primary transition-colors">Web Speech API</span>
+</div>
+<div class="mt-12 pt-8 border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-label-md text-outline">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="">VisionHUD // AI-Powered Tactical Vision</span>
+</div>
+<span class="">Hackathon Demo Prototype • Real-Time Edge Processing</span>
+</div>
+</div>
+</section>
+</main>
+
+
+
+
+
+
+</body></html>
